@@ -1,0 +1,17 @@
+Postman requests:
+
+Endpoint 'maas'
+Create a Conjurefile with parameters and 'conjure-up' locally afterwards
+POST: http://127.0.0.1:5000/maas/?maas_endpoint=localhost&api_key=apikey123!!&operation=create
+takes a LONG time (17-20 minutes)
+
+Endpoint 'apps' 
+to check running nodes:
+GET http://127.0.0.1:5000/apps/ 
+
+create new deployment:
+expose=true will create a service with the specified port
+POST: http://127.0.0.1:5000/apps/?nr_nodes=4&expose=true&port=8080
+
+delete deployment:
+DELETE http://127.0.0.1:5000/apps/
