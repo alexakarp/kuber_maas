@@ -5,6 +5,11 @@ from flask_restful import Api, Resource, reqparse
 from kubernetes import client, config, watch
 from io import StringIO
 import yaml
+import os.path
+from pathlib import Path
+from os.path import expanduser
+
+
 
 app = Flask(__name__)
 api = Api(app)
@@ -14,7 +19,6 @@ deployment_operator_deploy = 'conjure-up'
 deployment_operator_teardown = 'conjure-down'
 controller = 'localhost-localhost'
 extensions_v1beta1 = client.ExtensionsV1beta1Api()
-config.load_kube_config()
 DEPLOYMENT_NAME = "nginx-deployment"
 
 
@@ -163,9 +167,20 @@ def delete_deployment(api_instance):
     print("Deployment deleted. status='%s'" % str(api_response.status))
 
 
+def check_cluster():
+    home = expanduser("~")
+    filename = home + '/.kube/config'
+    my_file = Path(filename)
+    if my_file.is_file():
+        print('Cluster is already there!')
+    else:
+        print('No cluster detected. Please deploy a cluster first using the endpoint /maas/')
+
+
 def main():
     api.add_resource(maas, "/maas/")
     api.add_resource(apps, "/apps/")
+    check_cluster()
     app.run(debug=True)
 
 
