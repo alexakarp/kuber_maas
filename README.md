@@ -1,7 +1,5 @@
 # kuber-maas
-
-1. Figure out how to deploy/maintain a Kubernetes cluster in a MAAS infrastructure. We know that the conjure-up tool-chain provides an easy way to achieve that, although it's probably too large for the anticipated use-case. A first iteration could wrap conjure-up  to transparently deploy Kubernetes (those deploys can be automated with the use of Conjurefiles). Focus in writing a pluggable code, in case conjure-up needs to be replaced by another deployment tool. Find a desirable configuration for Kubernetes for automated deployment in MAAS. 
-
+# Installation
 → first conjure-up needs to be installed on the local machine. If you don't have 'snap' installed on your system yet, make sure to install it:
 
 ```sh
@@ -54,17 +52,110 @@ The Console output should be something like this:
 >  Debugger PIN: 119-668-834
 
 
-Now try to deploy the cluster with a POST request
+# Using the service
 
-curl -X POST \ 'http://127.0.0.1:5000/maas/?maas_endpoint=localhost&api_key=apikey123%21%21&operation=create'
+There are two API endpoints:
+### 1. the endpoint for the high-level cluster operation
+http://127.0.0.1:5000/maas/
 
-The app checks, if there is a cluster deployed already. The deployment locally can take 17-20 minutes! After succesful deployment it will output the cluster status and:
+Two operations are possible on the maas endpoint:
+#### GET operation for checking if the cluster is already deployed
+
+```sh
+curl -X GET http://127.0.0.1:5000/maas/
+```
+The response will either be
+> "Cluster already running, no need to conjure-up"
+or
+> "Cluster not running"
+
+#### POST operation to deploy the kubernetes cluster
+```sh
+curl -X POST \
+  'http://127.0.0.1:5000/maas/?maas_endpoint=localhost&api_key=apikey123%21%21&operation=create'
+```
+**maas_endpoint** {string} - specifies, where the cluster should be deployed to. Could be a maas instance or localhost
+**api_key** {string} - can be used to verify user credentials of maas [not implemented yet]
+**operation** {string} - 'create' to deploy a cluster via conjure-up, 'destroy' to conjure-down the cluster [TODO: automate conjure-down]
+
+The service will create a local Conjurefile according to the input data and run conjure-up.
+**WARNING: the deployment of the cluster can take a long time (17-20 minutes)! Don't interrupt it before, otherwise it might corrupt the deployment**
+
+After succesful deployment it will output the cluster status and:
+
 > Installation of your big software is now complete
 
-2. Build a REST service that exposes an endpoint through which is possible to deploy/destroy a Kubernetes cluster in a MAAS pool. The service must know how many clusters it has deployed and how many are currently active, and must be able to access and deploy applications on these clusters. The first iteration could consider that there is either one or zero clusters deployed at any given time.
+
+### 2. the enpoint for the applications on the cluster:
+http://127.0.0.1:5000/apps/
+#### GET Operation to show deployments saved during runtime of the service
+
+```sh
+curl -X GET http://127.0.0.1:5000/apps/
+```
+The Response could look like this:
+
+```json
+{
+    "37d3ecde-02d2-11e9-a821-f2e4555daa4e": {
+        "deployment_name": "nginx",
+        "replicas": 3,
+        "expose": true,
+        "service": {
+            "name": "nginx",
+            "cluster_ip": "10.152.183.89",
+            "node_port": 30284,
+            "port": 8080
+        }
+    },
+    "95409701-02d2-11e9-a821-f2e4555daa4e": {
+        "deployment_name": "nginx23",
+        "replicas": 4,
+        "expose": false,
+        "service": {}
+    }
+}
+```
+
+Notice that the deployment 'nginx' has an associated service running, while 'nginx23' is deployed without a service.
+
+#### POST operation to create a new deployment on the cluster with or without a service to expose it
+
+```sh
+curl -X POST \
+  'http://127.0.0.1:5000/apps/?replicas=4&expose=true&port=8080&name=nginx&image=nginx'
+```
+**replicas** {int} - specifies the number of replicas on the cluster
+**expose** {true/false} - if true creates a service for the deployment
+**port** {int} - can specify the port
+**name** {string} - name of the deployment
+**image** {string} - name of the image to be deployed
+
+The response will for example say 'created: nginx'. Every created deployment will be saved in a dictionary with its associated UID and possible service.
 
 
-3. Create an endpoint in the aforementioned REST service for deploying applications on top of the Kubernetes cluster. An initial iteration could deploy a simple container with a “hello-world” program.
+#### DELETE operation to delete a deployment with a possibly associated service, either by UID or manually by name
+###### Deleting a service that was created during runtime of the service by UID:
+```sh
+curl -X DELETE \
+  'http://127.0.0.1:5000/apps/?uid=37d3ecde-02d2-11e9-a821-f2ecurl -X DELETE \
+  'http://127.0.0.1:5000/apps/?service=false&name=nginx23'
+The response will be the status of the deletion, for example:
+```json
+{'observedGeneration': 1, 'replicas': 4, 'updatedReplicas': 4, 'readyReplicas': 4, 'availableReplicas': 4, 'conditions': [{'type': 'Available', 'status': 'True', 'lastUpdateTime': '2018-12-18T15:53:57Z', 'lastTransitionTime': '2018-12-18T15:53:57Z', 'reason': 'MinimumReplicasAvailable', 'message': 'Deployment has minimum availability.'}]}
+```
+This will also remove the entry from the dictionary of deployments
+
+###### Deleting a service manually with name:
+If a deployment exists without being created in this service's runtime, it will not be included in the dictionary. In that case, it can be deleted manually
+```sh
+curl -X DELETE \
+  'http://127.0.0.1:5000/apps/?service=false&name=nginx23'
+```
+**service** {true/false} - indicates whether an associated service is to be deleted aswell
+**name** {string} - name of the deployment that is to be deleted
+
+The response will look similar to the one with UID.
 
 
-4. Modify the service to include a container building pipeline, making it possible for the user to just provide an application binary and a few specifications. The service would then wrap the binary in a Docker image and build it, then deploying it on top of the Kubernetes cluster.
+

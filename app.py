@@ -32,8 +32,6 @@ class maas(Resource):
         return ('Cluster not running'), 404
 
     def post(self):
-        if check_cluster():
-            return 'Cluster already running, no need to conjure-up', 409
         parser = reqparse.RequestParser()
         parser.add_argument('maas_endpoint')
         parser.add_argument('api_key')
@@ -42,42 +40,33 @@ class maas(Resource):
 
         maas_endpoint = args["maas_endpoint"]
         api_key = args["api_key"]
-
-        output = "Running Conjure-Up with: \n" + "MaaS Endpoint: " + maas_endpoint + "\n" + "API_Key: " + api_key
-
-        #Creating Conjurefile
-        f = open('Conjurefile', 'w+')
-        f.write("# Core Spell\n")
-        f.write("spell: canonical-kubernetes\n\n")
-        f.write("cloud: " + maas_endpoint + "\n\n")
-        f.write("controller: " + controller + "\n\n")
-        f.write("debug: true")
-        f.flush()
-
-        #Executing conjure-up via terminal --> takes a LONG time!
-        if(args["operation"] == 'create'):
-            #os.system('juju bootstrap - -bootstrap - series = xenial')
-            os.system(deployment_operator_deploy)
-
         if (args["operation"] == 'destroy'):
             os.system(deployment_operator_teardown)
+            return ('Conjure-down on cluster'), 200
+
+        if check_cluster():
+            return 'Cluster already running, no need to conjure-up', 409
+        if (args["operation"] == 'create'):
+            # os.system('juju bootstrap - -bootstrap - series = xenial')
+            # Creating Conjurefile
+            f = open('Conjurefile', 'w+')
+            f.write("# Core Spell\n")
+            f.write("spell: canonical-kubernetes\n\n")
+            f.write("cloud: " + maas_endpoint + "\n\n")
+            f.write("controller: " + controller + "\n\n")
+            f.write("debug: true")
+            f.flush()
+
+            # Executing conjure-up via terminal --> takes a LONG time!
+            os.system(deployment_operator_deploy)
+        output = "Running Conjure-Up with: \n" + "MaaS Endpoint: " + maas_endpoint + "\n" + "API_Key: " + api_key
+
 
         return output, 200
 
 class apps(Resource):
     def get(self):
-        #config.load_kube_config()
-
         print(deployments)
-        v1 = client.CoreV1Api()
-        #print("Listing pods with their IPs: ")
-        #bufferstring = ''
-        #just returning pods with their IPs as a check that they are up
-        #ret = v1.list_pod_for_all_namespaces(watch=False)
-
-        #for i in ret.items:
-        #    bufferstring = bufferstring + i.status.pod_ip + " " + i.metadata.namespace + " " + i.metadata.name + " ### "
-
         return deployments, 200
 
     def post(self):
@@ -183,7 +172,7 @@ class apps(Resource):
         #deployment is removed from the dict
         deployments.pop(uid)
 
-        return testoutput, 200
+        return response_msg.status, 200
 
 
 def create_deployment_object(name, image, replicas):
