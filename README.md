@@ -139,8 +139,10 @@ The response will for example say 'created: nginx'. Every created deployment wil
 ```sh
 curl -X DELETE \
   'http://127.0.0.1:5000/apps/?uid=37d3ecde-02d2-11e9-a821-f2ecurl -X DELETE \
-  'http://127.0.0.1:5000/apps/?service=false&name=nginx23'
+```
+
 The response will be the status of the deletion, for example:
+
 ```json
 {'observedGeneration': 1, 'replicas': 4, 'updatedReplicas': 4, 'readyReplicas': 4, 'availableReplicas': 4, 'conditions': [{'type': 'Available', 'status': 'True', 'lastUpdateTime': '2018-12-18T15:53:57Z', 'lastTransitionTime': '2018-12-18T15:53:57Z', 'reason': 'MinimumReplicasAvailable', 'message': 'Deployment has minimum availability.'}]}
 ```
