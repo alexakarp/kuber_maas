@@ -3,11 +3,12 @@ import os
 from flask import Flask
 from flask_restful import Api, Resource, reqparse
 from kubernetes import client, config, watch
-from io import StringIO
-import yaml
 import os.path
 from pathlib import Path
 from os.path import expanduser
+import time
+import random
+import string
 
 
 
@@ -21,7 +22,7 @@ controller = 'localhost-localhost'
 extensions_v1beta1 = client.ExtensionsV1beta1Api()
 DEPLOYMENT_NAME = "nginx-deployment"
 config.load_kube_config()
-services = {}
+deployments = {}
 
 
 class maas(Resource):
@@ -67,7 +68,7 @@ class apps(Resource):
     def get(self):
         #config.load_kube_config()
 
-        print(services)
+        print(deployments)
         v1 = client.CoreV1Api()
         #print("Listing pods with their IPs: ")
         #bufferstring = ''
@@ -77,7 +78,7 @@ class apps(Resource):
         #for i in ret.items:
         #    bufferstring = bufferstring + i.status.pod_ip + " " + i.metadata.namespace + " " + i.metadata.name + " ### "
 
-        return str(services), 200
+        return deployments, 200
 
     def post(self):
         parser = reqparse.RequestParser()
@@ -104,8 +105,15 @@ class apps(Resource):
 
         extensions_v1beta1 = client.ExtensionsV1beta1Api()
         deployment = create_deployment_object(name, image, replicas)
-        test = create_deployment(extensions_v1beta1, deployment)
+        deployment_instance = create_deployment(extensions_v1beta1, deployment)
         api_instance = client.CoreV1Api()
+        uid = deployment_instance.metadata.uid
+        #deployments
+        save_deployment = {}
+        save_deployment['deployment_name'] = deployment_instance.metadata.name
+        save_deployment['replicas'] = deployment_instance.spec.replicas
+        save_deployment['expose'] = False
+        save_deployment['service'] = {}
 
 
         #if user wants it exposed, service will be created
@@ -120,32 +128,61 @@ class apps(Resource):
             spec.type = "NodePort"
             spec.ports = [client.V1ServicePort(protocol="TCP", port=port_nr)]
             service.spec = spec
-            api_instance.create_namespaced_service(namespace="default", body=service)
-            service_instance = name + '1234'
-            services[service_instance] = service
+            service_instance = api_instance.create_namespaced_service(namespace="default", body=service)
+            #time.sleep(1)
+            save_deployment['expose'] = True
+
+            #using UIDs at the moment. could use ran_id aswell
+            #service_id = name + '-' + ran_id(4)
+
+            save_service = {}
+            save_service['name'] = service_instance.spec.selector['app']
+            save_service['cluster_ip'] = service_instance.spec._cluster_ip
+            save_service['node_port'] = service_instance.spec.ports[0].node_port
+            save_service['port'] = service_instance.spec.ports[0].port
+            save_deployment['service'] = save_service
+            deployments[uid] = save_deployment
             return ('created: ' + name), 200
 
-
+        deployments[uid] = save_deployment
         return ('created: ' + name), 200
 
     def delete(self):
-
         parser = reqparse.RequestParser()
         parser.add_argument('name')
+        parser.add_argument('uid')
         parser.add_argument('service')
         args = parser.parse_args()
         name = args['name']
         service = args['service']
+        uid = args['uid']
         extensions_v1beta1 = client.ExtensionsV1beta1Api()
 
-        if service == 'true':
+        #if no uid is specified, deployment and/or service can be deleted manually
+        if uid == '' or uid == None:
+            if service == 'true':
+                api_instance = client.CoreV1Api()
+                body = client.V1DeleteOptions()
+                #delete service
+                api_instance.delete_namespaced_service(name=name, namespace="default", body=body)
+            # delete deployment
+            response_msg = delete_deployment(extensions_v1beta1, name)
+            testoutput = str(response_msg.status)
+            return testoutput, 200
+
+        # if uid is specified, it will read from the dict whether a service is to be deleted or only deployment
+        tobe_deleted = deployments[uid]
+        if tobe_deleted['expose']:
             api_instance = client.CoreV1Api()
             body = client.V1DeleteOptions()
-            api_instance.delete_namespaced_service(name='nginx', namespace="default", body=body)
-
-        #delete deployment
-        response_msg = delete_deployment(extensions_v1beta1, name)
+            #delete service
+            api_instance.delete_namespaced_service(name=tobe_deleted['service']['name'], namespace="default", body=body)
+        # delete deployment
+        response_msg = delete_deployment(extensions_v1beta1, tobe_deleted['deployment_name'])
         testoutput = str(response_msg.status)
+        #deployment is removed from the dict
+        deployments.pop(uid)
+
         return testoutput, 200
 
 
@@ -206,14 +243,13 @@ def check_cluster():
         print('No cluster detected. Please deploy a cluster first using the endpoint /maas/')
         return False
 
+def ran_id(size):
+    return ''.join(random.choice(string.ascii_letters + string.digits) for x in range(size))
+
 
 def main():
     api.add_resource(maas, "/maas/")
     api.add_resource(apps, "/apps/")
-
-
-
-
     check_cluster()
     app.run(debug=True)
 
