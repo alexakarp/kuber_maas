@@ -140,10 +140,8 @@ class apps(Resource):
 
         if service == 'true':
             api_instance = client.CoreV1Api()
-            # deleting of service not yet working
-            api_instance.delete_namespaced_service(name='nginx', namespace="default")
-
-
+            body = client.V1DeleteOptions()
+            api_instance.delete_namespaced_service(name='nginx', namespace="default", body=body)
 
         #delete deployment
         response_msg = delete_deployment(extensions_v1beta1, name)
