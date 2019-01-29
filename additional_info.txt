@@ -1,0 +1,84 @@
+#If conjure-up fails, juju controller might be broken. Try killing bootstrapping it_
+juju controllers
+juju kill-controller -y <controllername>
+juju kill-controller -y localhost-localhost
+
+#clean configs if neccessary
+rm -rf ~/.local/share/juju
+
+#Create new bootstrap
+juju bootstrap --bootstrap-series=xenial
+
+=================
+
+#read Kubernetes config
+less .kube/config
+#delete Kubernetes config
+rm -rf .kube/config
+
+=====
+
+cluster deployment time:
+17 mins
+
+=====
+
+Deploy nginx app to kubernetes:
+
+kubectl run nginx --image=nginx 
+kubectl get deployments
+kubectl get ep
+(for endpoints)
+
+kubectl delete deployment/nginx-deployment
+
+========================
+
+to expose the deplyoment as service:
+
+kubectl expose deployment/nginx-deployment --type="NodePort" --port 8080
+
+kubectl describe services/kubernetes-bootcamp
+
+export NODE_PORT=$(kubectl get services/kubernetes-bootcamp -o go-template='{{(index .spec.ports 0).nodePort}}')
+echo NODE_PORT=$NODE_PORT
+
+curl $(minikube ip):$NODE_PORT
+
+
+delete services:
+
+kubectl delete service my-service
+#kubectl delete service -l run=kubernetes-bootcamp
+
+========================
+
+to run it on proxy for browser:
+kubectl proxy
+
+get name of pod:
+export POD_NAME=$(kubectl get pods -o go-template --template '{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}')
+echo Name of the Pod: $POD_NAME
+
+make a request to that pod:
+curl http://localhost:8001/api/v1/namespaces/default/pods/$POD_NAME/proxy/
+
+====================
+
+kubernetes UI:
+kubectl proxy
+http://localhost:8001/api/v1/namespaces/kube-system/services/https:kubernetes-dashboard:/proxy/
+
+=============
+
+Kubernetes Health checks:
+
+kubectl get deployments
+kubectl cluster-info
+kubectl get pods --all-namespaces
+kubectl get services
+kubectl get all
+
+https://unix.stackexchange.com/questions/468416/setting-up-passwordless-sudo-on-linux-distributions
+
+

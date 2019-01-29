@@ -9,6 +9,7 @@ from os.path import expanduser
 import time
 import random
 import string
+import uuid;
 
 
 
@@ -21,7 +22,6 @@ deployment_operator_teardown = 'conjure-down'
 controller = 'localhost-localhost'
 extensions_v1beta1 = client.ExtensionsV1beta1Api()
 DEPLOYMENT_NAME = "nginx-deployment"
-config.load_kube_config()
 deployments = {}
 
 
@@ -96,7 +96,8 @@ class apps(Resource):
         deployment = create_deployment_object(name, image, replicas)
         deployment_instance = create_deployment(extensions_v1beta1, deployment)
         api_instance = client.CoreV1Api()
-        uid = deployment_instance.metadata.uid
+        #uid = deployment_instance.metadata.uid
+        uid = uuid.uuid4()
         #deployments
         save_deployment = {}
         save_deployment['deployment_name'] = deployment_instance.metadata.name

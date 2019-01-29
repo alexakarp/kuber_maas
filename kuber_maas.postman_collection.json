@@ -1,0 +1,294 @@
+{
+	"info": {
+		"_postman_id": "0796c057-9565-4129-beab-802a4404546b",
+		"name": "kuber_maas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "GET Cluster",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "maas_endpoint",
+							"value": "localhost",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "api_key",
+							"value": "123dsfkjh325",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/maas/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"maas",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Deploy cluster (localhost)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "maas_endpoint",
+							"value": "localhost",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "api_key",
+							"value": "123dsfkjh325",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/maas/?maas_endpoint=localhost&api_key=apikey123!!&operation=create",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"maas",
+						""
+					],
+					"query": [
+						{
+							"key": "maas_endpoint",
+							"value": "localhost"
+						},
+						{
+							"key": "api_key",
+							"value": "apikey123!!"
+						},
+						{
+							"key": "operation",
+							"value": "create"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET Deployed apps",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "nr_nodes",
+							"value": "4",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/apps/?",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"apps",
+						""
+					],
+					"query": [
+						{
+							"key": "nr_nodes",
+							"value": "5",
+							"disabled": true
+						},
+						{
+							"key": "api_key",
+							"value": "",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST Deployments to cluster",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "nr_nodes",
+							"value": "4",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/apps/?replicas=4&expose=true&port=8080&name=nginx&image=nginx",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"apps",
+						""
+					],
+					"query": [
+						{
+							"key": "replicas",
+							"value": "4"
+						},
+						{
+							"key": "expose",
+							"value": "true"
+						},
+						{
+							"key": "port",
+							"value": "8080"
+						},
+						{
+							"key": "name",
+							"value": "nginx"
+						},
+						{
+							"key": "image",
+							"value": "nginx"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DEL Delete Deployment (and service)",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "nr_nodes",
+							"value": "4",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:5000/apps/?service=false&name=nginx23&uid=1dd7d23e-02dd-11e9-a821-f2e4555daa4e",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "5000",
+					"path": [
+						"apps",
+						""
+					],
+					"query": [
+						{
+							"key": "service",
+							"value": "false"
+						},
+						{
+							"key": "name",
+							"value": "nginx23"
+						},
+						{
+							"key": "uid",
+							"value": "1dd7d23e-02dd-11e9-a821-f2e4555daa4e"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
