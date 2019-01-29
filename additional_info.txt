@@ -1,4 +1,4 @@
-#If conjure-up fails, juju controller might be broken. Try killing bootstrapping it_
+#If conjure-up fails, juju controller might be broken. Try killing and bootstrapping it
 juju controllers
 juju kill-controller -y <controllername>
 juju kill-controller -y localhost-localhost
